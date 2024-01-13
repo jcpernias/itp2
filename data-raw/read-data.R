@@ -18,7 +18,15 @@ read_ecv_file <- function(type, year, variables, absent) {
   file_vars <- variables |> filter(file == .env$type)
   var_list <- as.list(file_vars$type) |> setNames(file_vars$name)
   var_list$.default = "-"
-  read_csv(file_name, col_types = var_list)
+  excl_vars <- absent |> filter(year == as.integer(.env$year) + 2000) |>
+    pull(var)
+  exclude <- excl_vars %in% excl_vars
+  read_csv(file_name, col_types = var_list[!exclude])
 }
 
 db <- read_ecv_file("d", "05", variables, absent)
+
+db <- read_ecv_file("p", "05", variables, absent)
+
+absent |> filter(year == 2005) |> pull(var)
+db |> colnames() %in% (absent |> filter(year == 2005) |> pull(var))
