@@ -1,8 +1,8 @@
-factor,path,type
-urb,./urb.csv,i
-nation,./nation.csv,i
-sex,./sex.csv,i
-region,./region.csv,c
-well_being,./well_being.csv,i
-fin_hardship,./fin_hardship.csv,i
-hh_type,./hh_type.csv,i
+factor,type
+urb,i
+nation,i
+sex,i
+region,c
+well_being,i
+fin_hardship,i
+hh_type,i

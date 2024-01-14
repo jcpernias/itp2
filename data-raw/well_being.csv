@@ -1,7 +1,7 @@
 levels,ecv
-Very Bad,
-Bad,
-Fairly Bad,
-Fairly Good,
-God,
-Very Good,
+Very Bad,1
+Bad,2
+Fairly Bad,3
+Fairly Good,4
+Good,5
+Very Good,6
