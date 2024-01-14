@@ -55,9 +55,6 @@ make_factor <- function(x, factor_table) {
 }
 
 
-as_tibble_col(ecv05p |> pull(PM100)) |>
-  left_join(fin_hardship_tbl, join_by(value == ecv))
-
 fin_hardship_tbl <- make_factor_table("fin_hardship", factors_db)
 
 f <- make_factor(ecv05p |> pull(PM100), fin_hardship_tbl)
