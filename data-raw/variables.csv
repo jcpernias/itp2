@@ -5,6 +5,7 @@ d,DB040,c
 d,DB060,i
 d,DB090,d
 d,DB100,i
+h,HB010,i
 h,HB030,i
 h,HX040,i
 h,HX060,i
@@ -19,6 +20,7 @@ r,RB090,i
 r,RB200,i
 r,vrLOWJOB,i
 r,vrEU2020,i
+p,PB010,i
 p,PB030,i
 p,PB040,d
 p,PB210,i
