@@ -54,13 +54,6 @@ make_factor <- function(x, factor_table) {
   factor(f, levels = factor_table$levels)
 }
 
-
-fin_hardship_tbl <- make_factor_table("fin_hardship", factors_db)
-
-f <- make_factor(ecv05p |> pull(PM100), fin_hardship_tbl)
-
-summary(f)
-
 ## Fix PE040 in 2019 database
 ##
 ecv19p$PE040 <- as.integer(ecv19p$PE040)
@@ -75,3 +68,28 @@ ecv_all_p <- bind_rows(ecv05p, ecv11p, ecv19p)
 
 ecv_hh <- left_join(ecv_all_d, ecv_all_h,
                     by = join_by(DB030 == HB030, DB010 == HB010))
+ecv_pp <- left_join(ecv_all_r, ecv_all_p,
+                    by = join_by(RB030 == PB030, RB010 == PB010))
+
+
+## Final databases
+##
+
+fin_hardship_tbl <- make_factor_table("fin_hardship", factors_db)
+region_tbl <- make_factor_table("region", factors_db)
+urb_tbl <- make_factor_table("urb", factors_db)
+type_hh_tbl <- make_factor_table("type_hh", factors_db)
+
+
+
+households <- ecv_hh |>
+  transmute(id_hh = as.integer((DB010 - 2000) * 10000000 + DB030),
+            ecv_year = factor(DB010, levels = c(2005, 2011, 2019)),
+            region = make_factor(DB040, region_tbl),
+            urb = make_factor(DB100, urb_tbl),
+            size_hh = HX040,
+            cunits = HX240,
+            type_hh = make_factor(HX060, type_hh_tbl),
+            ydisp_hh = vhRentaa,
+            pov_hh = vhPobreza == 1,
+            depriv_hh = vhMATDEP == 1)
