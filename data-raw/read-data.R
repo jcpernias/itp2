@@ -60,3 +60,18 @@ fin_hardship_tbl <- make_factor_table("fin_hardship", factors_db)
 f <- make_factor(ecv05p |> pull(PM100), fin_hardship_tbl)
 
 summary(f)
+
+## Fix PE040 in 2019 database
+##
+ecv19p$PE040 <- as.integer(ecv19p$PE040)
+
+## Join databases
+##
+ecv_all_d <- bind_rows(ecv05d, ecv11d, ecv19d)
+ecv_all_h <- bind_rows(ecv05h, ecv11h, ecv19h)
+ecv_all_r <- bind_rows(ecv05r, ecv11r, ecv19r)
+ecv_all_p <- bind_rows(ecv05p, ecv11p, ecv19p)
+
+
+ecv_hh <- left_join(ecv_all_d, ecv_all_h,
+                    by = join_by(DB030 == HB030, DB010 == HB010))
