@@ -5,4 +5,4 @@ sex,i
 region,c
 well_being,i
 fin_hardship,i
-hh_type,i
+type_hh,i
