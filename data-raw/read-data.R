@@ -80,6 +80,8 @@ urb_tbl <- make_factor_table("urb", factors_db)
 type_hh_tbl <- make_factor_table("type_hh", factors_db)
 sex_tbl <- make_factor_table("sex", factors_db)
 nation_tbl <- make_factor_table("nation", factors_db)
+well_being_tbl <- make_factor_table("well_being", factors_db)
+fin_hardship_tbl <- make_factor_table("fin_hardship", factors_db)
 
 
 households <- ecv_hh |>
@@ -87,7 +89,7 @@ households <- ecv_hh |>
             ecv_year = factor(DB010, levels = c(2005, 2011, 2019)),
             region = make_factor(DB040, region_tbl),
             urb = make_factor(DB100, urb_tbl),
-            size_hh = HX040,
+            size_hh = as.integer(HX040),
             cunits = HX240,
             type_hh = make_factor(HX060, type_hh_tbl),
             ydisp_hh = vhRentaa,
@@ -98,7 +100,7 @@ individuals <- ecv_pp |>
   transmute(id_hh = as.integer((RB010 - 2000) * 10000000 + trunc(RB030 / 100)),
             id_p = as.integer((RB010 - 2000) * 10000000 + RB030),
             ecv_year = factor(RB010, levels = c(2005, 2011, 2019)),
-            birth_year = RB080,
+            birth_year = as.integer(RB080),
             age = as.integer(RB010 - RB080 - 1),
             sex = make_factor(RB090, sex_tbl),
             absent = RB200 == 2,
@@ -106,9 +108,10 @@ individuals <- ecv_pp |>
             eu2020 = vrEU2020 == 1,
             country_birth = make_factor(PB210, nation_tbl),
             nationality = make_factor(PB220A, nation_tbl),
-            educ_year = PE030,
-            educ_low = PE040_F == -2 | PE040 %in% c(0, 1, 100),
-            educ_med = PE040 %in% c(2, 3, 200, 300, 344, 353, 354),
+            educ_year = as.integer(PE030),
+            educ_none = PE040_F == 2 | PE040 == 0,
+            educ_prim = PE040 %in% c(0, 1, 100),
+            educ_sec = PE040 %in% c(2, 3, 200, 300, 344, 353, 354),
             educ_sup = PE040 %in% c(4, 5, 400, 450, 500),
             work_age = PL190,
             work_years = PL200,
@@ -120,3 +123,57 @@ individuals <- ecv_pp |>
             inactive = PL031 %in% 6:11 | PL030 %in% 4:9,
             has_worked = PL015 == 1,
   )
+
+pov_transition <- ecv_pp |>
+  transmute(id_p = as.integer((RB010 - 2000) * 10000000 + RB030),
+            ecv_year = factor(RB010, levels = c(2005, 2011, 2019)),
+            age = as.integer(RB010 - RB080 - 1),
+            institution = case_when(ecv_year == 2019 ~ PT220 == 2,
+                                    ecv_year == 2011 ~ PT010 == 5,
+                                    ecv_year == 2005 ~ PM010 == 7),
+            adults = as.integer(PT020),
+            children = as.integer(PT030),
+            siblings = as.integer(PM035),
+            nworking = as.integer(PT040),
+            fabsent = case_when(ecv_year == 2019 ~ PT240 != 1,
+                                ecv_year == 2011 ~ !(PT010 %in% c(1, 2)),
+                                ecv_year == 2005 ~ !(PM010 %in% c(1, 3, 5))),
+            fcountry = make_factor(PT060, nation_tbl),
+            fnation = make_factor(PT060, nation_tbl),
+            fabsent = case_when(ecv_year == 2019 ~ PT230 != 1,
+                                ecv_year == 2011 ~ !(PT010 %in% c(1, 3)),
+                                ecv_year == 2005 ~ !(PM010 %in% c(1, 2, 4))),
+            mcountry = make_factor(PT070, nation_tbl),
+            mnation = make_factor(PT100, nation_tbl),
+            feduc =
+              factor(case_when(PT110 <= 1 | PM040 <= 2 ~ "Low",
+                               PT110 == 2 | PM040 == 3 ~ "Med",
+                               PT110 == 3 | PM040 >= 3 ~ "High"),
+                     levels = c("Low", "Med", "High")),
+            meduc =
+              factor(case_when(PT120 <= 1 | PM050 <= 2 ~ "Low",
+                               PT120 == 2 | PM050 == 3 ~ "Med",
+                               PT120 == 3 | PM050 >= 3 ~ "High"),
+                     levels = c("Low", "Med", "High")),
+            fself = case_when(ecv_year == 2019 ~ PT130 == 3,
+                              ecv_year == 2011 ~ PT130 == 2,
+                              ecv_year == 2005 ~ PM060 %in% c(2, 3)),
+            funempl = case_when(ecv_year == 2019 ~ PT130 == 4,
+                                ecv_year == 2011 ~ PT130 == 3,
+                                ecv_year == 2005 ~ PM060 == 4),
+            finactive = case_when(ecv_year == 2019 ~ PT130 %in% 6:8,
+                                  ecv_year == 2011 ~ PT130 %in% 5:6,
+                                  ecv_year == 2005 ~ PM060 %in% 5:7),
+            mself = case_when(ecv_year == 2019 ~ PT160 == 3,
+                              ecv_year == 2011 ~ PT160 == 2,
+                              ecv_year == 2005 ~ PM080 %in% c(2, 3)),
+            munempl = case_when(ecv_year == 2019 ~ PT160 == 4,
+                                ecv_year == 2011 ~ PT160 == 3,
+                                ecv_year == 2005 ~ PM080 == 4),
+            minactive = case_when(ecv_year == 2019 ~ PT160 %in% 6:8,
+                                  ecv_year == 2011 ~ PT160 %in% 5:6,
+                                  ecv_year == 2005 ~ PM080 %in% 5:7),
+            well_being = make_factor(PT190, well_being_tbl),
+            fin_hardship = make_factor(PM100, fin_hardship_tbl))
+
+
