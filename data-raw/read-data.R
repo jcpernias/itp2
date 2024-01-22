@@ -178,4 +178,4 @@ pov_transition <- ecv_pp |>
 
 save(households, file = "./data/households.RData", compress = "xz")
 save(individuals, file = "./data/individuals.RData", compress = "xz")
-save(pov_transition, file = "./data/pov_transition.Rdata", compress = "xz")
+save(pov_transition, file = "./data/pov_transition.RData", compress = "xz")
