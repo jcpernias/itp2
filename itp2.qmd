@@ -24,7 +24,7 @@ Add some variables to the ~pov_transition~ database:
 ```{r}
 pov <- left_join(pov_transition, 
                  select(individuals, c(id_p, birth_year, absent)),
-                 by = "id_p")
+                 by = "id_p") 
 ```
 
 Create a variable for the different cohorts:
@@ -38,8 +38,11 @@ pov <- pov |>
 
 Number of observations per cohort in each year:
 ```{r}
-pov |> count(ecv_year, cohort) |> 
-  filter(!is.na(cohort)) |> 
+cohorts <- pov |>
+  filter(!is.na(cohort)) 
+
+cohorts |> 
+  count(ecv_year, cohort) |> 
   pivot_wider(names_from = cohort, values_from = n)
 ```
 
