@@ -176,6 +176,11 @@ pov_transition <- ecv_pp |>
             well_being = make_factor(PT190, well_being_tbl),
             fin_hardship = make_factor(PM100, fin_hardship_tbl))
 
+## Save databases
+##
+if (!dir.exists("./data")) {
+  dir.create("./data")
+}
 save(households, file = "./data/households.RData", compress = "xz")
 save(individuals, file = "./data/individuals.RData", compress = "xz")
 save(pov_transition, file = "./data/pov_transition.RData", compress = "xz")
