@@ -1,0 +1,23 @@
+---
+title: "itp2"
+format: html
+---
+
+## Preliminares
+
+Utilizamos los paquetes que forman el ~tidyverse~ para manipular las bases de datos:
+```{r}
+library(tidyverse)
+```
+
+
+## Datos
+
+Leemos las bases de datos:
+```{r}
+load("./data/households.RData")
+load("./data/individuals.RData")
+load("./data/pov_transition.RData")
+```
+
+
