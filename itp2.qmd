@@ -36,14 +36,28 @@ pov <- pov |>
                          levels = c("60_65", "70_75", "80_85")))
 ```
 
-Number of observations per cohort in each year:
+Filter out observations of people who do not belong to the chosen cohorts. Create a variable ~povteen~ that is ~TRUE~ for individuals who lived in poverty as teenagers.
 ```{r}
 cohorts <- pov |>
-  filter(!is.na(cohort)) 
+  filter(!is.na(cohort)) |> 
+  mutate(povteen = case_when(ecv_year == 2005 ~ 
+                               fin_hardship %in% c("Very Often", "Often"),
+                             ecv_year != 2005 ~
+                               well_being %in% c("Very Bad", "Bad")))
+```
 
+Number of people in each cohort by year:
+```{r}
 cohorts |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = cohort, values_from = n)
 ```
 
+Number of people who lived in poverty as teenagers by cohort and year:  
+```{r}
+cohorts |> 
+  filter(povteen == TRUE) |> 
+  count(ecv_year, cohort) |> 
+  pivot_wider(names_from = cohort, values_from = n)
+```
 
