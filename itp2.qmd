@@ -43,7 +43,9 @@ cohorts <- pov |>
   mutate(povteen = case_when(ecv_year == 2005 ~ 
                                fin_hardship %in% c("Very Often", "Often"),
                              ecv_year != 2005 ~
-                               well_being %in% c("Very Bad", "Bad")))
+                               well_being %in% c("Very Bad", "Bad"))) |> 
+  left_join(individuals, by = "id_p") |> 
+  left_join(households, by = "id_hh")
 ```
 
 Number of people in each cohort by year:
@@ -59,5 +61,11 @@ cohorts |>
   filter(povteen == TRUE) |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = cohort, values_from = n)
+```
+
+```{r}
+mod0 <- lm(pov_hh ~ povteen * ecv_year, data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "60_65")
+summary(mod0)
 ```
 
