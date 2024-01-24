@@ -64,7 +64,7 @@ cohorts |>
 ```
 
 ```{r}
-mod0 <- lm(pov_hh ~ povteen * ecv_year, data = cohorts, 
+mod0 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts, 
            subset = ecv_year != 2005 & cohort == "60_65")
 summary(mod0)
 ```
