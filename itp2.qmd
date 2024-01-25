@@ -45,7 +45,8 @@ cohorts <- pov |>
                              ecv_year != 2005 ~
                                well_being %in% c("Very Bad", "Bad"))) |> 
   left_join(individuals, by = "id_p") |> 
-  left_join(households, by = "id_hh")
+  left_join(households, by = "id_hh") |> 
+  mutate(income = ydisp_hh / cunits)
 ```
 
 Number of people in each cohort by year:
@@ -69,3 +70,36 @@ mod0 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts,
 summary(mod0)
 ```
 
+```{r}
+mod1 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "70_75")
+summary(mod1)
+```
+
+```{r}
+mod2 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "80_85")
+summary(mod2)
+```
+
+
+```{r}
+mod3 <- lm(log(income) ~ (povteen + sex + country_birth) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "60_65")
+summary(mod3)
+```
+
+```{r}
+mod4 <- lm(log(income) ~ (povteen + sex + country_birth) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "70_75")
+summary(mod4)
+```
+
+```{r}
+mod5 <- lm(log(income) ~ (povteen + sex + country_birth) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "80_85")
+summary(mod5)
+```
