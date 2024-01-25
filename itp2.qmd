@@ -46,7 +46,8 @@ cohorts <- pov |>
                                well_being %in% c("Very Bad", "Bad"))) |> 
   left_join(individuals, by = "id_p") |> 
   left_join(households, by = "id_hh") |> 
-  mutate(income = ydisp_hh / cunits)
+  mutate(income = ydisp_hh / cunits,
+         teen_no_workers = nworking == 0)
 ```
 
 Number of people in each cohort by year:
@@ -65,40 +66,85 @@ cohorts |>
 ```
 
 ```{r}
-mod0 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts, 
+mod0 <- lm(pov_hh ~ (povteen + sex + country_birth + teen_no_workers) * ecv_year, data = cohorts, 
            subset = ecv_year != 2005 & cohort == "60_65")
 summary(mod0)
 ```
 
 ```{r}
-mod1 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts, 
+mod1 <- lm(pov_hh ~ (povteen + sex + country_birth  + teen_no_workers) * ecv_year, data = cohorts, 
            subset = ecv_year != 2005 & cohort == "70_75")
 summary(mod1)
 ```
 
 ```{r}
-mod2 <- lm(pov_hh ~ (povteen + sex + country_birth) * ecv_year, data = cohorts, 
+mod2 <- lm(pov_hh ~ (povteen + sex + country_birth + teen_no_workers) * ecv_year, data = cohorts, 
            subset = ecv_year != 2005 & cohort == "80_85")
 summary(mod2)
 ```
 
 
 ```{r}
-mod3 <- lm(log(income) ~ (povteen + sex + country_birth) * ecv_year, 
+mod3 <- lm(lowjob ~ (povteen + sex + country_birth) * ecv_year, 
            data = cohorts, 
            subset = ecv_year != 2005 & cohort == "60_65")
 summary(mod3)
 ```
 
 ```{r}
-mod4 <- lm(log(income) ~ (povteen + sex + country_birth) * ecv_year, 
+mod4 <- lm(lowjob ~ (povteen + sex + country_birth) * ecv_year, 
            data = cohorts, 
            subset = ecv_year != 2005 & cohort == "70_75")
 summary(mod4)
 ```
 
 ```{r}
-mod5 <- lm(log(income) ~ (povteen + sex + country_birth) * ecv_year, 
+mod5 <- lm(lowjob ~ (povteen + sex + country_birth) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "80_85")
+summary(mod5)
+```
+
+
+
+```{r}
+mod3 <- lm(eu2020 ~ (povteen + sex + country_birth + teen_no_workers) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "60_65")
+summary(mod3)
+```
+
+```{r}
+mod4 <- lm(eu2020 ~ (povteen + sex + country_birth + teen_no_workers) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "70_75")
+summary(mod4)
+```
+
+```{r}
+mod5 <- lm(eu2020 ~ (povteen + sex + country_birth + teen_no_workers) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "80_85")
+summary(mod5)
+```
+
+
+```{r}
+mod3 <- lm(educ_prim ~ (povteen + sex + country_birth) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "60_65")
+summary(mod3)
+```
+
+```{r}
+mod4 <- lm(educ_prim ~ (povteen + sex + country_birth) * ecv_year, 
+           data = cohorts, 
+           subset = ecv_year != 2005 & cohort == "70_75")
+summary(mod4)
+```
+
+```{r}
+mod5 <- lm(educ_prim ~ (povteen + sex + country_birth) * ecv_year, 
            data = cohorts, 
            subset = ecv_year != 2005 & cohort == "80_85")
 summary(mod5)
