@@ -3,7 +3,7 @@ title: "itp2"
 format: 
   html:
     embed-resources: true
-theme: cosmo
+theme: flatly
 editor: source
 ---
 
