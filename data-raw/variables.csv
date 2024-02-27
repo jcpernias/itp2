@@ -2,7 +2,6 @@ file,name,type
 d,DB010,i
 d,DB030,i
 d,DB040,c
-d,DB060,i
 d,DB090,d
 d,DB100,i
 h,HB010,i
