@@ -10,25 +10,34 @@ editor: visual
 ## Preliminaries
 
 We load the `tidyverse` packages in order to handle the databases:
+
 ```{r}
+#| message: false
+
 library(tidyverse)
 ```
 
 Load the `sandwich` and `lmtest` packages that allow us to compute heteroskedasticity-robust standard errors and tests:
+
 ```{r}
+#| message: false
+
 library(sandwich)
 library(lmtest)
 ```
 
 Load the `modelsummary` package:
+
 ```{r}
+#| message: false
+
 library(modelsummary)
 ```
-
 
 ## Data
 
 Read the database files:
+
 ```{r}
 load("./data/households.RData")
 load("./data/individuals.RData")
@@ -36,6 +45,7 @@ load("./data/pov_transition.RData")
 ```
 
 Add some variables to the `pov_transition` database:
+
 ```{r}
 pov <- left_join(pov_transition, 
                  select(individuals, c(id_p, birth_year, absent)),
@@ -43,6 +53,7 @@ pov <- left_join(pov_transition,
 ```
 
 Create a variable for the different cohorts:
+
 ```{r}
 pov <- pov |> 
   mutate(cohort = factor(case_when(birth_year %in% 1960:1965 ~ "60_65",
@@ -52,6 +63,7 @@ pov <- pov |>
 ```
 
 Filter out observations of people who do not belong to the chosen cohorts. Create a variable `povteen` that is `TRUE` for individuals who lived in poverty as teenagers.
+
 ```{r}
 cohorts <- pov |>
   filter(!is.na(cohort)) |> 
@@ -66,13 +78,15 @@ cohorts <- pov |>
 ```
 
 Number of people in each cohort by year:
+
 ```{r}
 cohorts |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = cohort, values_from = n)
 ```
 
-Number of people who lived in poverty as teenagers by cohort and year:  
+Number of people who lived in poverty as teenagers by cohort and year:
+
 ```{r}
 cohorts |> 
   filter(povteen == TRUE) |> 
@@ -84,20 +98,20 @@ cohorts |>
 
 ### Baseline models
 
-Linear probability model that explains `pov_hh`, the adult's household lives in poverty, using the explanatory `povteen`, poverty when he was a teenager, and `ecv_year`.
-$$
+Linear probability model that explains `pov_hh`, the adult's household lives in poverty, using the explanatory `povteen`, poverty when he was a teenager, and `ecv_year`. $$
 pov\_hh = \beta_0 + \beta_1\, povteen + \beta_2\, ecv\_year + \beta_3\, povteen \cdot ecv\_year + u
 $$
 
 Born in 1960-1965 cohort:
+
 ```{r}
 mod0_60_65 <- lm(pov_hh ~ povteen * ecv_year, 
                  data = cohorts, 
                  subset = ecv_year != 2005 & cohort == "60_65")
 ```
 
-
 Born in 1970-1975 cohort:
+
 ```{r}
 mod0_70_75 <- lm(pov_hh ~ povteen * ecv_year, 
                  data = cohorts, 
@@ -105,14 +119,15 @@ mod0_70_75 <- lm(pov_hh ~ povteen * ecv_year,
 ```
 
 Born in 1980-1985 cohort:
+
 ```{r}
 mod0_80_85 <- lm(pov_hh ~ povteen * ecv_year, 
            data = cohorts, 
            subset = ecv_year != 2005 & cohort == "80_85")
 ```
 
-
 Regression models summary table:
+
 ```{r}
 models <- list("60_65" = mod0_60_65,
                "70_75" = mod0_70_75,
@@ -122,4 +137,3 @@ modelsummary(models, vcov = "HC3",
              stars = c("*" = 0.1, "**" = 0.05, "***" = 0.01),
              gof_map = c("nobs", "rmse", "r.squared", "vcov.type"))
 ```
-
