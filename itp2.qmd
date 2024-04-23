@@ -4,7 +4,7 @@ format:
   html:
     embed-resources: true
 theme: flatly
-editor: source
+editor: visual
 ---
 
 ## Preliminaries
