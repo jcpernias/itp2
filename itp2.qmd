@@ -1,9 +1,15 @@
 ---
 title: "itp2"
-format: 
+date: last-modified
+toc: true
+number-sections: true
+number-depth: 3
+format-links: false
+
+format:
   html:
+    theme: flatly
     embed-resources: true
-theme: flatly
 editor: visual
 ---
 
@@ -52,10 +58,8 @@ pov <- local({
     select(id_p, birth_year, absent)
   pov_transition |> 
     filter(ecv_year != 2005) |> 
-  left_join(tmp, by = "id_p") 
+    left_join(tmp, by = "id_p") 
 }) 
-  
-  
 ```
 
 Create a variable for the different cohorts:
