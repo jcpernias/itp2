@@ -82,24 +82,58 @@ cohorts <- pov |>
   left_join(individuals, by = "id_p") |> 
   left_join(households, by = "id_hh") |> 
   mutate(income = ydisp_hh / cunits,
-         teen_no_workers = nworking == 0)
+         teen_no_workers = nworking == 0,
+         native = country_birth == "Spain",
+         pnative = fcountry == "Spain" & mcountry == "Spain",
+         female = sex == "Female",
+         both_parents = !fabsent & !mabsent,
+         no_jobs = nworking == 0,
+         no_adults = adults == 0,
+         peduc_med = feduc == "Med" | meduc == "Med",
+         peduc_hi = feduc == "High" | meduc == "High",
+         ) |> 
+  select(pov_hh, povteen, ecv_year, cohort,
+         no_jobs, pnative, native, female,
+         fabsent, mabsent, both_parents, peduc_med, peduc_hi,
+         educ_none, educ_prim, educ_sec, educ_sup) |> 
+  drop_na()
 ```
 
-Number of people in each cohort by year:
+### Descriptive statistics
+
+ Number of people in each cohort by year:
+
+```{r}
+tab <- cohorts |> 
+  count(ecv_year, cohort) |> 
+  pivot_wider(names_from = cohort, values_from = n)
+
+all <- tab |> 
+  select(-ecv_year) |> 
+  summarise_all(sum) |> 
+  mutate(ecv_year = "All", .before = everything())
+bind_rows(tab, all)
+```
+
+All variables are binary. Percent of observations that satisfy the corresponding condition.
 
 ```{r}
 cohorts |> 
-  count(ecv_year, cohort) |> 
-  pivot_wider(names_from = cohort, values_from = n)
-```
-
-Number of people who lived in poverty as teenagers by cohort and year:
-
-```{r}
-cohorts |> 
-  filter(povteen == TRUE) |> 
-  count(ecv_year, cohort) |> 
-  pivot_wider(names_from = cohort, values_from = n)
+  group_by(cohort) |> 
+  summarise(pov_hh = 100 * mean(pov_hh), 
+            povteen = 100 * mean(povteen),
+            no_jobs = 100 * mean(no_jobs),
+            native = 100 * mean(native),
+            pnative = 100 * mean(pnative),
+            female = 100 * mean(female),
+            both_parents = 100 * mean(both_parents),
+            peduc_med = 100 * mean(peduc_med),
+            peduc_hi = 100 * mean(peduc_hi),
+            ) |> 
+  pivot_longer(cols = -cohort,
+               names_to = "names") |> 
+  pivot_wider(names_from = cohort, 
+              values_from = value)
 ```
 
 ## Regression models
@@ -110,33 +144,12 @@ Linear probability model that explains `pov_hh`, the adult's household lives in 
 pov\_hh = \beta_0 + \beta_1\, povteen + \beta_2\, ecv\_year + \beta_3\, povteen \cdot ecv\_year + u
 $$
 
-Born in 1960-1965 cohort:
-
 ```{r}
-mod0_60_65 <- lm(pov_hh ~ povteen * ecv_year, 
-                 data = cohorts, 
-                 subset = cohort == "60_65")
-```
+frml <- pov_hh ~ povteen * ecv_year
+mod0_60_65 <- lm(frml, data = cohorts, subset = cohort == "60_65")
+mod0_70_75 <- lm(frml, data = cohorts, subset = cohort == "70_75")
+mod0_80_85 <- lm(frml, data = cohorts, subset = cohort == "80_85")
 
-Born in 1970-1975 cohort:
-
-```{r}
-mod0_70_75 <- lm(pov_hh ~ povteen * ecv_year, 
-                 data = cohorts, 
-                 subset = cohort == "70_75")
-```
-
-Born in 1980-1985 cohort:
-
-```{r}
-mod0_80_85 <- lm(pov_hh ~ povteen * ecv_year, 
-           data = cohorts, 
-           subset = cohort == "80_85")
-```
-
-Regression models summary table:
-
-```{r}
 models <- list("60_65" = mod0_60_65,
                "70_75" = mod0_70_75,
                "80_85" = mod0_80_85)
@@ -144,4 +157,101 @@ models <- list("60_65" = mod0_60_65,
 modelsummary(models, vcov = "HC3", 
              stars = c("*" = 0.1, "**" = 0.05, "***" = 0.01),
              gof_map = c("nobs", "rmse", "r.squared", "vcov.type"))
+```
+
+### More regressors
+
+```{r}
+frml <- pov_hh ~ povteen * ecv_year + no_jobs + native + pnative + 
+  female +  both_parents + peduc_med + peduc_hi
+
+
+mod1_60_65 <- lm(frml,  data = cohorts, subset = cohort == "60_65")
+mod1_70_75 <- lm(frml,  data = cohorts, subset = cohort == "70_75")
+mod1_80_85 <- lm(frml,  data = cohorts, subset = cohort == "80_85")
+
+models <- list("60_65" = mod1_60_65,
+               "70_75" = mod1_70_75,
+               "80_85" = mod1_80_85)
+
+modelsummary(models, vcov = "HC3", 
+             stars = c("*" = 0.1, "**" = 0.05, "***" = 0.01),
+             gof_map = c("nobs", "rmse", "r.squared", "vcov.type"))
+```
+
+### The role of education
+
+```{r}
+cohorts_ed <- cohorts |> 
+  mutate(educ = factor(case_when(educ_none == TRUE ~ "None",
+                                 educ_prim == TRUE ~ "Prim",
+                                 educ_sec == TRUE ~ "Sec",
+                                 educ_sup == TRUE ~ "Sup"),
+                       levels = c("None", "Prim", "Sec", "Sup")))
+
+cohorts_ed |> group_by(cohort, educ) |> 
+  summarise(fpov = mean(pov_hh) * 100, .groups = "drop") |> 
+  pivot_wider(names_from = cohort, values_from = fpov)
+```
+
+```{r}
+tab <- cohorts_ed |> filter(povteen == TRUE) |> 
+  group_by(cohort, educ) |> 
+  summarise(fed = n(), .groups = "drop") |> 
+  pivot_wider(names_from = cohort, values_from = fed)
+
+marg <- tab |> select(-educ) |> summarise_all(sum)
+
+tab_povteen <- tab |> 
+  mutate(`60_65` = `60_65` / marg[["60_65"]] * 100, 
+         `70_75` = `70_75` / marg[["70_75"]] * 100, 
+         `80_85` = `80_85` / marg[["80_85"]] * 100)
+tab_povteen
+```
+
+```{r}
+tab <- cohorts_ed |> filter(povteen == FALSE) |> 
+  group_by(cohort, educ) |> 
+  summarise(fed = n(), .groups = "drop") |> 
+  pivot_wider(names_from = cohort, values_from = fed)
+
+marg <- tab |> select(-educ) |> summarise_all(sum)
+
+tab_nopovteen <- tab |> 
+  mutate(`60_65` = `60_65` / marg[["60_65"]] * 100, 
+         `70_75` = `70_75` / marg[["70_75"]] * 100, 
+         `80_85` = `80_85` / marg[["80_85"]] * 100)
+tab_nopovteen
+```
+
+```{r}
+library(ggplot2)
+
+t1 <- tab_povteen |> 
+  pivot_longer(cols = -educ) |> 
+  mutate(povteen = TRUE)
+
+t2 <- tab_nopovteen |> 
+  pivot_longer(cols = -educ) |> 
+  mutate(povteen = FALSE)
+
+db <- bind_rows(t1, t2)
+```
+
+```{r}
+ggplot(data = filter(db, name == "60_65"),
+       aes(x = educ, y = value, fill = povteen)) +
+  geom_bar(position = "dodge", stat = "identity")
+```
+
+```{r}
+ggplot(data = filter(db, name == "70_75"),
+       aes(x = educ, y = value, fill = povteen)) +
+  geom_bar(position = "dodge", stat = "identity")
+```
+
+```{r}
+ggplot(data = filter(db, name == "80_85"),
+       aes(x = educ, y = value, fill = povteen)) +
+  geom_bar(position = "dodge", stat = "identity")
 ```
