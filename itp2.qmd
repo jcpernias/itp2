@@ -62,10 +62,11 @@ Create a variable for the different cohorts:
 
 ```{r}
 pov <- pov |> 
-  mutate(cohort = factor(case_when(birth_year %in% 1960:1965 ~ "60_65",
-                                   birth_year %in% 1970:1975 ~ "70_75",
-                                   birth_year %in% 1980:1985 ~ "80_85"),
-                         levels = c("60_65", "70_75", "80_85")))
+  mutate(cohort = 
+           factor(case_when(birth_year %in% 1960:1965 ~ "60_65",
+                            birth_year %in% 1970:1975 ~ "70_75",
+                            birth_year %in% 1980:1985 ~ "80_85"),
+                  levels = c("60_65", "70_75", "80_85")))
 ```
 
 Filter out observations of people who do not belong to the chosen cohorts. Create a variable `povteen` that is `TRUE` for individuals who lived in poverty as teenagers.
