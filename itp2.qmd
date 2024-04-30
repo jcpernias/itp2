@@ -112,7 +112,8 @@ all <- tab |>
   select(-ecv_year) |> 
   summarise_all(sum) |> 
   mutate(ecv_year = "All", .before = everything())
-bind_rows(tab, all)
+bind_rows(tab, all)  |>
+  datasummary_df()
 ```
 
 All variables are binary. Percent of observations that satisfy the corresponding condition.
@@ -133,7 +134,8 @@ cohorts |>
   pivot_longer(cols = -cohort,
                names_to = "names") |> 
   pivot_wider(names_from = cohort, 
-              values_from = value)
+              values_from = value) |>
+  datasummary_df()
 ```
 
 ## Regression models
@@ -191,7 +193,8 @@ cohorts_ed <- cohorts |>
 
 cohorts_ed |> group_by(cohort, educ) |> 
   summarise(fpov = mean(pov_hh) * 100, .groups = "drop") |> 
-  pivot_wider(names_from = cohort, values_from = fpov)
+  pivot_wider(names_from = cohort, values_from = fpov) |>
+  datasummary_df()
 ```
 
 ```{r}
@@ -206,7 +209,8 @@ tab_povteen <- tab |>
   mutate(`60_65` = `60_65` / marg[["60_65"]] * 100, 
          `70_75` = `70_75` / marg[["70_75"]] * 100, 
          `80_85` = `80_85` / marg[["80_85"]] * 100)
-tab_povteen
+tab_povteen |>
+  datasummary_df()
 ```
 
 ```{r}
@@ -221,7 +225,8 @@ tab_nopovteen <- tab |>
   mutate(`60_65` = `60_65` / marg[["60_65"]] * 100, 
          `70_75` = `70_75` / marg[["70_75"]] * 100, 
          `80_85` = `80_85` / marg[["80_85"]] * 100)
-tab_nopovteen
+tab_nopovteen |>
+  datasummary_df()
 ```
 
 ```{r}
