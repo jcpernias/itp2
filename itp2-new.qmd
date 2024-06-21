@@ -106,3 +106,14 @@ cohorts |>
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = ecv_year, values_from = n)
 ```
+
+```{r}
+cohorts |> 
+  count(ecv_year, cohort, povteen, pov_hh) |> 
+  mutate(povtrans = case_when(!povteen & !pov_hh ~ "FF",
+                              !povteen & pov_hh ~ "FT",
+                              povteen & !pov_hh ~ "TF",
+                              povteen & pov_hh ~ "TT")) |> 
+  select(-c(povteen, pov_hh)) |> 
+  pivot_wider(names_from = povtrans, values_from = n)
+```
