@@ -1,16 +1,5 @@
 ---
 title: itp2-new
-format: 
-  html: 
-    embed-resources: true
-    theme: flatly
-    
-toc: true
-number-sections: true
-number-depth: 3
-date: last-modified
-
-editor: visual
 ---
 
 ## Preliminaries

@@ -1,0 +1,18 @@
+project:
+  title: "itp2"
+  output-dir: html
+  render:
+    - "*.qmd"
+
+date: last-modified
+toc: true
+number-sections: true
+number-depth: 3
+format-links: false
+
+format:
+  html:
+    theme: flatly
+    embed-resources: true
+
+editor: visual

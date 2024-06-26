@@ -7,3 +7,5 @@
 data/
 *.html
 itp2_files/
+
+/.quarto/
