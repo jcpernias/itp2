@@ -73,31 +73,54 @@ cohorts <- pov |>
 Number of people in each cohort by year:
 
 ```{r}
-cohorts |> 
+nobs_tab <- cohorts |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = ecv_year, values_from = n)
+nobs_tab
 ```
 
 Number of people who lived in poverty as teenagers by cohort and year:
 
 ```{r}
-cohorts |> 
+nteen_tab <- cohorts |> 
   filter(povteen == TRUE) |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = ecv_year, values_from = n)
+nteen_tab
+```
+
+Fraction of people who lived in poverty as teenagers in each cohort by year:
+
+```{r}
+left_join(nobs_tab, nteen_tab, by = "cohort") |> 
+  mutate(`2011` = `2011.y` / `2011.x` * 100,
+         `2019` = `2019.y` / `2019.x` * 100) |> 
+  select(-contains("."))
 ```
 
 Number of people who lived in poverty as adults by cohort and year:
 
 ```{r}
-cohorts |> 
+nadult_tab <- cohorts |> 
   filter(pov_hh == TRUE) |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = ecv_year, values_from = n)
+nadult_tab
 ```
 
+Fraction of people who lived in poverty as teenagers in each cohort by year:
+
 ```{r}
-cohorts |> 
+left_join(nobs_tab, nadult_tab, by = "cohort") |> 
+  mutate(`2011` = `2011.y` / `2011.x` * 100,
+         `2019` = `2019.y` / `2019.x` * 100) |> 
+  select(-contains("."))
+```
+
+Transition matrix of teen and adult poverty by cohort and year:
+
+```{r}
+trans_pov <- cohorts |> 
   count(ecv_year, cohort, povteen, pov_hh) |> 
   mutate(povtrans = case_when(!povteen & !pov_hh ~ "FF",
                               !povteen & pov_hh ~ "FT",
@@ -105,4 +128,15 @@ cohorts |>
                               povteen & pov_hh ~ "TT")) |> 
   select(-c(povteen, pov_hh)) |> 
   pivot_wider(names_from = povtrans, values_from = n)
+trans_pov
+```
+
+```{r}
+trans_pov |> 
+  mutate(total = FF + FT + TF + TT,
+         FF_pct = FF / total * 100, 
+         FT_pct = FT / total * 100, 
+         TF_pct = TF / total * 100, 
+         TT_pct = TT / total * 100) |> 
+  select(-c(FF, FT, TF, TT, total))
 ```
