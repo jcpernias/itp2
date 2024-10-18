@@ -81,8 +81,11 @@ Filter out observations of people who do not belong to the chosen cohorts. Creat
 cohorts <- pov |>
   filter(!is.na(cohort)) |> 
   mutate(povteen = well_being %in% c("Very Bad", "Bad")) |> 
-  left_join(individuals, by = "id_p") |> 
-  left_join(households, by = "id_hh") |> 
+  left_join(select(individuals, 
+                   -c(ecv_year, age, birth_year, absent)), 
+                   by = "id_p") |> 
+  left_join(select(households,
+                   -c(ecv_year)), by = "id_hh") |> 
   mutate(income = ydisp_hh / cunits,
          teen_no_workers = nworking == 0)
 ```
