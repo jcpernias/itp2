@@ -12,6 +12,23 @@ Load the `tidyverse` packages:
 library(tidyverse)
 ```
 
+Load the `sandwich` and `lmtest` packages that allow us to compute heteroskedasticity-robust standard errors and tests:
+
+```{r}
+#| message: false
+
+library(sandwich)
+library(lmtest)
+```
+
+Load the `modelsummary` package:
+
+```{r}
+#| message: false
+
+library(modelsummary)
+```
+
 ## Data
 
 Read the database files:
@@ -131,6 +148,8 @@ trans_pov <- cohorts |>
 trans_pov
 ```
 
+Transition matrix by year and cohort (percentages):
+
 ```{r}
 trans_pov |> 
   mutate(total = FF + FT + TF + TT,
@@ -139,4 +158,33 @@ trans_pov |>
          TF_pct = TF / total * 100, 
          TT_pct = TT / total * 100) |> 
   select(-c(FF, FT, TF, TT, total))
+```
+
+Probability of adult poverty conditional on experiencing youth poverty:
+
+```{r}
+trans_pov |> 
+  mutate(No = FT / (FT + FF),
+         Yes = TT / (TF + TT), 
+         ratio = Yes / No) |> 
+  select(ecv_year, cohort, No, Yes, ratio)
+```
+
+## Regressions
+
+Basic linear probability model:
+
+$$
+pov\_hh = \beta_0 + \beta_1 povteen + \beta_2 ecv\_year2019 + 
+\beta_3 povteen \cdot ecv\_year2019 + u
+$$
+
+Whole sample:
+
+```{r}
+base_frml <- pov_hh ~ povteen * ecv_year
+mod_base_all <- lm(base_frml, data = cohorts)
+modelsummary(mod_base_all, vcov = "HC3", 
+             stars = c("*" = 0.1, "**" = 0.05, "***" = 0.01),
+             gof_map = c("nobs", "rmse", "r.squared", "vcov.type"))
 ```
