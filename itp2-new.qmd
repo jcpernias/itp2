@@ -96,7 +96,9 @@ Number of people in each cohort by year:
 nobs_tab <- cohorts |> 
   count(ecv_year, cohort) |> 
   pivot_wider(names_from = ecv_year, values_from = n)
-nobs_tab
+str_join <- \(x) paste0(x, collapse = "")
+align_str <- str_join(c("l", rep("r", NCOL(nobs_tab) - 1)))
+datasummary_df(nobs_tab, fmt = 0, align = align_str)
 ```
 
 Number of people who lived in poverty as teenagers by cohort and year:
