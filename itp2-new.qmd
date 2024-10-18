@@ -4,12 +4,13 @@ title: itp2-new
 
 ## Preliminaries
 
-Load the `tidyverse` packages:
+Load the `tidyverse` and `glue` packages:
 
 ```{r}
 #| message: false
 
 library(tidyverse)
+library(glue)
 ```
 
 Load the `sandwich` and `lmtest` packages that allow us to compute heteroskedasticity-robust standard errors and tests:
@@ -51,28 +52,44 @@ pov <- local({
 }) 
 ```
 
-| Birth year | Age at 2010 | Age at 2018 |
-|:----------:|:-----------:|:-----------:|
-| 1960-1964  |    46-50    |    54-58    |
-| 1965-1969  |    41-45    |    49-53    |
-| 1970-1974  |    36-40    |    44-48    |
-| 1975-1979  |    31-35    |    39-43    |
-| 1980-1984  |    26-30    |    34-38    |
-
-: Cohort definition
-
-Create a variable for the different cohorts:
+Define cohort indicators.
 
 ```{r}
+# Number of years in each cohort
+span_cohort <- 5
+
+# Start year of first cohort
+start_year <- 1960
+
+# Number of cohorts
+num_cohorts <- 5
+
+# Build cohort labels
+start_cohort <- seq(from = start_year, by = span_cohort, length.out = num_cohorts)
+end_cohort <- start_cohort + span_cohort - 1
+cohort_labels <- glue("{start_cohort}-{end_cohort}")
+
+# Add cohort indicator to the dataset
 pov <- pov |> 
-  mutate(cohort = 
-           factor(case_when(birth_year %in% 1960:1964 ~ "1960-64", 
-                            birth_year %in% 1965:1969 ~ "1965-69", 
-                            birth_year %in% 1970:1974 ~ "1970-74",
-                            birth_year %in% 1975:1979 ~ "1975-79", 
-                            birth_year %in% 1980:1984 ~ "1980-84"),
-                  levels = c("1960-64", "1965-69", "1970-74",
-                             "1975-79", "1980-84")))
+  mutate(cohort = cut(birth_year, 
+                      seq(from = start_year, by = span_cohort, 
+                          length.out = num_cohorts + 1), 
+                      right = FALSE, labels = cohort_labels))
+```
+
+Create a table showing the age range for each cohort during the years the survey was conducted.
+
+```{r}
+ecv_years <- c(2010, 2018)
+cohort_tab_lst <- 
+  map(ecv_years, \(x) glue("{x - end_cohort}-{x - start_cohort}")) |> 
+    set_names(glue("Age range at {ecv_years}"))
+cohort_tab <-
+  append(list("Cohorts" = cohort_labels), cohort_tab_lst) |> 
+    as_tibble()
+str_join <- \(x) paste0(x, collapse = "")
+align_str <- str_join(c("l", rep("r", NCOL(cohort_tab) - 1)))
+datasummary_df(cohort_tab, fmt = 0, align = align_str)
 ```
 
 Filter out observations of people who do not belong to the chosen cohorts. Create a variable `povteen` that is `TRUE` for individuals who lived in poverty as teenagers.
