@@ -40,14 +40,20 @@ load("./data/individuals.RData")
 load("./data/pov_transition.RData")
 ```
 
-Filter out data for 2005 edition of ECV and add some variables to the `pov_transition` database:
+Define which years of the ECV are used:
+
+```{r}
+ecv_years <- c(2011, 2019)
+```
+
+Filter out data for other editions of ECV and add some variables to the `pov_transition` database:
 
 ```{r}
 pov <- local({
   tmp <- individuals |>
     select(id_p, birth_year, absent)
   pov_transition |> 
-    filter(ecv_year != 2005) |> 
+    filter(ecv_year %in% ecv_years) |> 
   left_join(tmp, by = "id_p") 
 }) 
 ```
@@ -65,25 +71,26 @@ start_year <- 1960
 num_cohorts <- 5
 
 # Build cohort labels
-start_cohort <- seq(from = start_year, by = span_cohort, length.out = num_cohorts)
+start_cohort <- 
+  seq(from = start_year, by = span_cohort, length.out = num_cohorts)
 end_cohort <- start_cohort + span_cohort - 1
 cohort_labels <- glue("{start_cohort}-{end_cohort}")
 
 # Add cohort indicator to the dataset
 pov <- pov |> 
-  mutate(cohort = cut(birth_year, 
-                      seq(from = start_year, by = span_cohort, 
-                          length.out = num_cohorts + 1), 
-                      right = FALSE, labels = cohort_labels))
+  mutate(cohort = 
+           cut(birth_year, 
+               seq(from = start_year, by = span_cohort, 
+                   length.out = num_cohorts + 1), 
+               right = FALSE, labels = cohort_labels))
 ```
 
 Create a table showing the age range for each cohort during the years the survey was conducted.
 
 ```{r}
-ecv_years <- c(2010, 2018)
 cohort_tab_lst <- 
   map(ecv_years, \(x) glue("{x - end_cohort}-{x - start_cohort}")) |> 
-    set_names(glue("Age range at {ecv_years}"))
+    set_names(glue("Age range at {ecv_years - 1}"))
 cohort_tab <-
   append(list("Cohorts" = cohort_labels), cohort_tab_lst) |> 
     as_tibble()
@@ -101,8 +108,7 @@ cohorts <- pov |>
   left_join(select(individuals, 
                    -c(ecv_year, age, birth_year, absent)), 
                    by = "id_p") |> 
-  left_join(select(households,
-                   -c(ecv_year)), by = "id_hh") |> 
+  left_join(select(households, !ecv_year), by = "id_hh") |> 
   mutate(income = ydisp_hh / cunits,
          teen_no_workers = nworking == 0)
 ```
@@ -110,64 +116,44 @@ cohorts <- pov |>
 Number of people in each cohort by year:
 
 ```{r}
-nobs_tab <- cohorts |> 
-  count(ecv_year, cohort) |> 
-  pivot_wider(names_from = ecv_year, values_from = n)
-str_join <- \(x) paste0(x, collapse = "")
-align_str <- str_join(c("l", rep("r", NCOL(nobs_tab) - 1)))
-datasummary_df(nobs_tab, fmt = 0, align = align_str)
-```
 
-Number of people who lived in poverty as teenagers by cohort and year:
+pov_counts <- local({
+  nobs_tab <- cohorts |> 
+    count(ecv_year, cohort, name = "nobs")
 
-```{r}
-nteen_tab <- cohorts |> 
-  filter(povteen == TRUE) |> 
-  count(ecv_year, cohort) |> 
-  pivot_wider(names_from = ecv_year, values_from = n)
-nteen_tab
-```
+  nteen_tab <- cohorts |> 
+    filter(povteen == TRUE) |> 
+    count(ecv_year, cohort, name = "nteen")
 
-Fraction of people who lived in poverty as teenagers in each cohort by year:
+  nadult_tab <- cohorts |> 
+    filter(pov_hh == TRUE) |> 
+    count(ecv_year, cohort, name = "nadult")
+  
+  nobs_tab |> 
+    left_join(nteen_tab, by = join_by(ecv_year, cohort)) |> 
+    left_join(nadult_tab, by = join_by(ecv_year, cohort)) 
+})
 
-```{r}
-left_join(nobs_tab, nteen_tab, by = "cohort") |> 
-  mutate(`2011` = `2011.y` / `2011.x` * 100,
-         `2019` = `2019.y` / `2019.x` * 100) |> 
-  select(-contains("."))
-```
 
-Number of people who lived in poverty as adults by cohort and year:
+pov_freq <- pov_counts |> 
+  mutate(teen_pct = nteen / nobs * 100, 
+         adult_pct = nadult / nobs * 100) |> 
+  select(-c(nobs, nteen, nadult)) 
 
-```{r}
-nadult_tab <- cohorts |> 
-  filter(pov_hh == TRUE) |> 
-  count(ecv_year, cohort) |> 
-  pivot_wider(names_from = ecv_year, values_from = n)
-nadult_tab
-```
-
-Fraction of people who lived in poverty as teenagers in each cohort by year:
-
-```{r}
-left_join(nobs_tab, nadult_tab, by = "cohort") |> 
-  mutate(`2011` = `2011.y` / `2011.x` * 100,
-         `2019` = `2019.y` / `2019.x` * 100) |> 
-  select(-contains("."))
+datasummary_df(pov_freq, fmt = 1, align = "ccrr")
 ```
 
 Transition matrix of teen and adult poverty by cohort and year:
 
 ```{r}
+blbls = c("F", "T")
 trans_pov <- cohorts |> 
   count(ecv_year, cohort, povteen, pov_hh) |> 
-  mutate(povtrans = case_when(!povteen & !pov_hh ~ "FF",
-                              !povteen & pov_hh ~ "FT",
-                              povteen & !pov_hh ~ "TF",
-                              povteen & pov_hh ~ "TT")) |> 
+  mutate(povtrans = 
+           glue("{blbls[povteen + 1]}{blbls[pov_hh + 1]}")) |> 
   select(-c(povteen, pov_hh)) |> 
-  pivot_wider(names_from = povtrans, values_from = n)
-trans_pov
+  pivot_wider(names_from = povtrans, values_from = n)  
+datasummary_df(trans_pov, fmt = 0, align = "llrrrr")
 ```
 
 Transition matrix by year and cohort (percentages):
@@ -179,7 +165,8 @@ trans_pov |>
          FT_pct = FT / total * 100, 
          TF_pct = TF / total * 100, 
          TT_pct = TT / total * 100) |> 
-  select(-c(FF, FT, TF, TT, total))
+  select(-c(FF, FT, TF, TT, total)) |> 
+  datasummary_df(fmt = 1, align = "llrrrr")
 ```
 
 Probability of adult poverty conditional on experiencing youth poverty:
@@ -189,7 +176,8 @@ trans_pov |>
   mutate(No = FT / (FT + FF),
          Yes = TT / (TF + TT), 
          ratio = Yes / No) |> 
-  select(ecv_year, cohort, No, Yes, ratio)
+  select(ecv_year, cohort, No, Yes, ratio) |> 
+  datasummary_df(fmt = 2, align = "llccc")
 ```
 
 ## Regressions
