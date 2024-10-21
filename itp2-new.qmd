@@ -46,7 +46,7 @@ Define which years of the ECV are used:
 ecv_years <- c(2011, 2019)
 ```
 
-Filter out data from editions of ECV not in `ecv_years` and add some variables to the `pov_transition` database:
+Filter out data from editions of ECV not in `ecv_years`, remove the variables that only appear in the 2005 edition, and add some variables to the `pov_transition` database:
 
 ```{r}
 pov <- local({
@@ -54,7 +54,8 @@ pov <- local({
     select(id_p, birth_year, absent)
   pov_transition |> 
     filter(ecv_year %in% ecv_years) |> 
-  left_join(tmp, by = "id_p") 
+  left_join(tmp, by = "id_p") |> 
+    select(!c(siblings, fin_hardship))
 }) 
 ```
 
@@ -99,11 +100,11 @@ align_str <- str_join(c("l", rep("r", NCOL(cohort_tab) - 1)))
 datasummary_df(cohort_tab, fmt = 0, align = align_str)
 ```
 
-Filter out observations of people who do not belong to the chosen cohorts. Create a variable `povteen` that is `TRUE` for individuals who lived in poverty as teenagers.
+Filter out observations of people who do not belong to the chosen cohorts and do not report household well-being during their adolescence. Also filter out observations where `institution` is not available. Create a variable `povteen` that is `TRUE` for individuals who lived in poverty as teenagers.
 
 ```{r}
 cohorts <- pov |>
-  filter(!is.na(cohort)) |> 
+  filter(!is.na(cohort), !is.na(well_being), !is.na(institution)) |> 
   mutate(povteen = well_being %in% c("Very Bad", "Bad")) |> 
   left_join(select(individuals, 
                    -c(ecv_year, age, birth_year, absent)), 
@@ -116,7 +117,6 @@ cohorts <- pov |>
 Number of people in each cohort by year:
 
 ```{r}
-
 pov_counts <- local({
   nobs_tab <- cohorts |> 
     count(ecv_year, cohort, name = "nobs")
@@ -134,7 +134,12 @@ pov_counts <- local({
     left_join(nadult_tab, by = join_by(ecv_year, cohort)) 
 })
 
+datasummary_df(pov_counts, fmt = 0, align = "ccrrr")
+```
 
+Proportion of observations by year and cohort:
+
+```{r}
 pov_freq <- pov_counts |> 
   mutate(teen_pct = nteen / nobs * 100, 
          adult_pct = nadult / nobs * 100) |> 
