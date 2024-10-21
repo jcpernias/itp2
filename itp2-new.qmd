@@ -46,7 +46,7 @@ Define which years of the ECV are used:
 ecv_years <- c(2011, 2019)
 ```
 
-Filter out data for other editions of ECV and add some variables to the `pov_transition` database:
+Filter out data from editions of ECV not in `ecv_years` and add some variables to the `pov_transition` database:
 
 ```{r}
 pov <- local({
